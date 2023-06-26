@@ -26,16 +26,16 @@ namespace TinyLearning {
         bool operator< (const Function& right) const;
 
         inline const vector<shared_ptr<Variable>>& Input() const {
-            return input_;
+            return inputs_;
         }
         inline const vector<weak_ptr<Variable>>& Output() const {
-            return output_;
+            return outputs_;
         }
         inline int Generation() const {
             return generation_;
         }
 
-        void ClearOutputsGrad();
+        void ClearOutputsGrad() const;
 
         struct Comparator {
             bool operator()(const shared_ptr<Function>& f1, const shared_ptr<Function>& f2) const {
@@ -44,8 +44,8 @@ namespace TinyLearning {
         };
 
     private:
-        vector<shared_ptr<Variable>> input_;
-        vector<weak_ptr<Variable>> output_;
+        vector<shared_ptr<Variable>> inputs_;
+        vector<weak_ptr<Variable>> outputs_;
 
         int generation_;
 

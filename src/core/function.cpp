@@ -24,16 +24,15 @@ namespace TinyLearning {
 
             output->SetCreator(shared_from_this());
 
-            this->output_.push_back(weak_ptr<Variable>(output));
+            this->outputs_.push_back(weak_ptr<Variable>(output));
             outputs.push_back(output);
         }
 
-        this->input_ = vector<shared_ptr<Variable>>{input};
+        this->inputs_ = vector<shared_ptr<Variable>>{input};
 
         return outputs;
     }
     vector<shared_ptr<Variable>> Function::operator()(const shared_ptr<Variable>& input0, const shared_ptr<Variable>& input1) {
-        //vector<shared_ptr<Variable>>bag = ;
         this->generation_ = std::max(input0->Generation(), input1->Generation());
         //cout << "function generation:" << generation_ << endl;
 
@@ -48,11 +47,11 @@ namespace TinyLearning {
 
             output->SetCreator(shared_from_this());
 
-            this->output_.push_back(output);
+            this->outputs_.push_back(output);
             outputs.push_back(output);
         }
 
-        this->input_ = vector<shared_ptr<Variable>>{input0, input1};
+        this->inputs_ = vector<shared_ptr<Variable>>{input0, input1};
 
         return outputs;
     }
@@ -72,11 +71,11 @@ namespace TinyLearning {
 
             output->SetCreator(shared_from_this());
 
-            this->output_.push_back(output);
+            this->outputs_.push_back(output);
             outputs.push_back(output);
         }
 
-        this->input_ = vector<shared_ptr<Variable>>{input0, input1, input2};
+        this->inputs_ = vector<shared_ptr<Variable>>{input0, input1, input2};
 
         return outputs;
     }
@@ -93,7 +92,6 @@ namespace TinyLearning {
 
     bool Function::operator< (const Function& right) const {
         if (this == &right) {
-            //cout << "insert duplicated Function" << endl;
             return false;
         }
 
@@ -104,7 +102,7 @@ namespace TinyLearning {
         }
     }
 
-    void Function::ClearOutputsGrad() {
+    void Function::ClearOutputsGrad() const {
         for (const auto& y:this->Output()) {
             y.lock()->ClearGrad();
         }
