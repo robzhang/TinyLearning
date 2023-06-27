@@ -12,6 +12,8 @@ using namespace std;
 namespace TinyLearning {
     class Module {
     public:
+        virtual ~Module()= default;
+
         template<typename... Args>
         shared_ptr<Variable> operator()(const Args&... args) {
             auto outputs = Forward(args...);

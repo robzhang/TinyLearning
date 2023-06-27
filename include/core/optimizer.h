@@ -16,6 +16,8 @@ namespace TinyLearning {
     public:
         Optimizer(const vector<shared_ptr<Variable>>& parameters, float learningRate);
 
+        virtual ~Optimizer() = default;
+
         void Update();
         void ClearGrads();
 
