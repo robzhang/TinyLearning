@@ -128,8 +128,8 @@ namespace TinyLearning {
     }
 
     shared_ptr<Variable> meanSquaredError(const shared_ptr<Variable>& x0, const shared_ptr<Variable>& x1) {
-        auto meanSquaredEror = MeanSquaredError::New();
-        return (*meanSquaredEror)(x0, x1)[0];
+        auto meanSquaredError = MeanSquaredError::New();
+        return (*meanSquaredError)(x0, x1)[0];
     }
 
     shared_ptr<Variable> linear(const shared_ptr<Variable>& x, const shared_ptr<Variable>& W, const shared_ptr<Variable>& b) {

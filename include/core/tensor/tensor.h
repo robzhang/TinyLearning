@@ -109,6 +109,14 @@ namespace TinyLearning {
             return offset;
         }
 
+        inline int dimSize() const {
+            return static_cast<int>(shape_.size());
+        }
+
+        static inline int dimSize(const vector<int>& shape) {
+            return static_cast<int>(shape.size());
+        }
+
         void reshape(const vector<int>& shape);
 
         void validateBroadcastShape(const vector<int> &shape) const;

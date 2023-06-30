@@ -50,7 +50,7 @@ namespace TinyLearning {
     }
 
     void Tensor::reshape(const vector<int>& shape) {
-        assert(shape.size() <= nMaxTensorAxes);
+        assert(dimSize(shape) <= nMaxTensorAxes);
 
         assert(countByShape(shape) == data_->size());
 
@@ -73,7 +73,7 @@ namespace TinyLearning {
         int target_size = countByShape(shape);
 
         auto data = new vector<float>(target_size);
-        vector<int> axes(shape.size(), 0);
+        vector<int> axes(dimSize(shape), 0);
 
         for (int i = 0; i < target_size; ++i) {
             int off = getBroadcastOffset(axes, shape);
@@ -93,18 +93,18 @@ namespace TinyLearning {
     }
 
     void Tensor::validateBroadcastShape(const vector<int> &shape) const {
-        int off = int(shape.size()) - int(this->shape_.size());
+        int off = dimSize(shape) - this->dimSize();
 
         assert(off >= 0);
 
-        for (int i = 0; i < this->shape_.size(); ++i) {
+        for (int i = 0; i < this->dimSize(); ++i) {
             assert(shape[off + i] == this->shape_[i] || this->shape_[i] == 1);
         }
     }
 
     int Tensor::getBroadcastOffset(const vector<int> &axes, const vector<int> &shape) const {
-        int fromDim = int(this->shape_.size());
-        int toDim = int(shape.size());
+        int fromDim = this->dimSize();
+        int toDim = dimSize(shape);
 
         int beginAt = toDim - fromDim;
 
@@ -132,7 +132,7 @@ namespace TinyLearning {
     }
 
     void Tensor::computeStrides() {
-        int nDim = int(shape_.size());
+        int nDim = this->dimSize();
         int stride = 1;
 
         strides_.resize(nDim);
@@ -146,7 +146,7 @@ namespace TinyLearning {
     Tensor* Tensor::Transpose(int dim0, int dim1) const {
         auto* t = new Tensor(*this);
 /*
-        if (t->shape_.size() == 1) {
+        if (t->dimSize() == 1) {
             t->reshape(vector<int>{1, t->shape_[0]});
         }
 */
@@ -157,15 +157,15 @@ namespace TinyLearning {
     }
 
     Tensor* Tensor::Transpose(const vector<int>& axes) const {
-        assert(axes.size() == this->shape_.size());
+        assert(axes.size() == this->dimSize());
 
         auto* t = new Tensor(*this);
 /*
-        if (t->shape_.size() == 1) {
+        if (t->dimSize() == 1) {
             t->reshape(vector<int>{1, t->shape_[0]});
         }
 */
-        int nDim = int(t->shape_.size());
+        int nDim = t->dimSize();
 
         for (int i = 0; i < nDim; ++i) {
             t->shape_[i] = shape_[axes[i]];
@@ -176,7 +176,7 @@ namespace TinyLearning {
     }
 
     vector<int> Tensor::AxesForTransposingLastTwoDims() const {
-        auto nDim = int(this->shape_.size());
+        auto nDim = this->dimSize();
 
         assert(nDim >= 2);
 
@@ -394,7 +394,7 @@ namespace TinyLearning {
     }
 
     Tensor* Tensor::Dot(const Tensor* other) const {
-        assert(this->shape_.size() == 1 && other->shape_.size() == 1 && this->shape_[0] == other->shape_[0]);
+        assert(this->dimSize() == 1 && other->dimSize() == 1 && this->shape_[0] == other->shape_[0]);
 
         float dot = 0;
         for (auto i = 0; i < this->shape_[0]; ++i) {
@@ -409,15 +409,15 @@ namespace TinyLearning {
     }
 
     Tensor* Tensor::MatMul(const Tensor* other) const {
-        if (this->shape_.size() == 1 && this->shape_.size() == 1) {
+        if (this->dimSize() == 1 && this->dimSize() == 1) {
             return this->Dot(other);
         }
 
-        if (this->shape_.size() == 2 && other->shape_.size() == 2) {
+        if (this->dimSize() == 2 && other->dimSize() == 2) {
             return this->matrixMultiply(other);
         }
 
-        if (this->shape_.size() == 1 && other->shape_.size() == 2) {
+        if (this->dimSize() == 1 && other->dimSize() == 2) {
             auto tmp = this->Reshape(vector<int>{1, this->shape_[0]});
 
             auto t = tmp->matrixMultiply(other);
@@ -427,7 +427,7 @@ namespace TinyLearning {
             return t;
         }
 
-        if (this->shape_.size() == 2 && other->shape_.size() == 1) {
+        if (this->dimSize() == 2 && other->dimSize() == 1) {
             auto tmp = other->Reshape(vector<int>{other->shape_[0], 1});
 
             auto t = this->matrixMultiply(tmp);
@@ -441,13 +441,13 @@ namespace TinyLearning {
     }
 
     shared_ptr<Tensor> Tensor::MatMul(const shared_ptr<Tensor> &tensor1, const shared_ptr<Tensor> &tensor2) {
-        auto t = (*tensor1).MatMul(*tensor2);;
+        auto t = (*tensor1).MatMul(*tensor2);
 
         return shared_ptr<Tensor>(t);
     }
 
     Tensor* Tensor::matrixMultiply(const Tensor* other) const {
-        assert(this->shape_.size() == 2 && other->shape_.size() == 2 && this->shape_[1] == other->shape_[0]);
+        assert(this->dimSize() == 2 && other->dimSize() == 2 && this->shape_[1] == other->shape_[0]);
 
         int r = this->shape_[0], c = other->shape_[1];
         auto data = new vector<float>(r * c, 0);
@@ -520,8 +520,9 @@ namespace TinyLearning {
 
     Tensor* Tensor::Sum(const vector<int>& axes, bool keepDims) {
         // only support 1 axis at most
-        assert(axes.size() <= this->shape_.size());
-        if (axes.empty() || this->shape_.size() == 1) {
+        assert(static_cast<int>(axes.size()) <= this->dimSize());
+
+        if (axes.empty() || this->dimSize() == 1) {
             return sumAll(keepDims);
         }
 
@@ -538,7 +539,7 @@ namespace TinyLearning {
     }
 
     Tensor* Tensor::sumAll(bool keepDims) const {
-        auto shape = !keepDims ? vector<int>{1} : vector<int>(this->shape_.size(), 1);
+        auto shape = !keepDims ? vector<int>{1} : vector<int>(this->dimSize(), 1);
 
         auto t = Zeros(shape);
 
@@ -553,20 +554,20 @@ namespace TinyLearning {
     }
 
     Tensor* Tensor::sumAxis(int axis) const {
-        assert(axis >= 0 && axis < shape_.size());
+        assert(axis >= 0 && axis < dimSize());
 
-        auto xt = this->Transpose(int(shape_.size()) - 1, axis);
+        auto xt = this->Transpose(dimSize() - 1, axis);
 
         auto t = xt->doSumAxis();
 
-        return t->Transpose(int(shape_.size()) - 1, axis);
+        return t->Transpose(dimSize() - 1, axis);
     }
 
     Tensor* Tensor::doSumAxis() const {
         auto shape = this->shape_;
-        shape[shape.size() - 1] = 1;
+        shape[dimSize(shape) - 1] = 1;
 
-        auto axes = vector<int>(this->shape_.size(), 0);
+        auto axes = vector<int>(this->dimSize(), 0);
 
         auto t = Zeros(shape);
         auto n = this->data_->size() / this->shape_.back();
@@ -594,7 +595,7 @@ namespace TinyLearning {
         }
 
         int i = 0;
-        for (int j = 0; j < this->shape_.size(); ++j) {
+        for (int j = 0; j < this->dimSize(); ++j) {
             if (this->shape_[j] != 0) {
                 if (i != j) {
                     this->shape_[i] = this->shape_[j];
@@ -634,17 +635,17 @@ namespace TinyLearning {
     }
 
     Tensor* Tensor::SumTo(const vector<int>& shape) {
-        auto nDim = int(shape.size());
-        auto lead = int(this->shape_.size()) - nDim;
+        auto nDim = dimSize(shape);
+        auto lead = this->dimSize() - nDim;
         assert(lead >= 0);
 
-        vector<int> axes(this->shape_.size());
+        vector<int> axes(this->dimSize());
         for (auto i = 0; i< lead; ++i) {
             axes[i] = i;
         }
 
         auto count = lead;
-        for (auto i = 0; i < shape.size(); ++i) {
+        for (auto i = 0; i < dimSize(shape); ++i) {
             if (shape[i] == 1) {
                 axes[count++] = lead + i;
             }
@@ -705,7 +706,7 @@ namespace TinyLearning {
         doPrint(index, 0);
     }
     void Tensor::doPrint(vector<int>index, int offsetInShape) {
-        if (offsetInShape < this->shape_.size() - 1) {
+        if (offsetInShape < this->dimSize() - 1) {
             for (int i = 0; i < this->shape_[offsetInShape]; ++i) {
                 index.push_back(i);
                 this->doPrint(index, offsetInShape+1);

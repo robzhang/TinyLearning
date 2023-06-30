@@ -16,7 +16,6 @@ namespace TinyLearning {
     class Function;
     class Variable {
     public:
-        Variable() = delete;
         explicit Variable(shared_ptr<Tensor> data, string  name="");
 
         void backward(bool retain_grad = false);
